@@ -672,7 +672,7 @@ h2 {
   font-family: var(--font-script), "Great Vibes", cursive;
   font-style: normal;
   font-weight: 400;
-  font-size: clamp(3.8rem, 9.5vw, 5.4rem);
+  font-size: clamp(2.6rem, 11vw, 5.4rem);
   line-height: 1;
   letter-spacing: 0.01em;
   color: #f7f4ef;
@@ -684,9 +684,9 @@ h2 {
   margin: 0.15rem 0.2rem 0 0;
   padding-right: 0.1rem;
   font-family: var(--font-body);
-  font-size: clamp(0.56rem, 1.05vw, 0.66rem);
+  font-size: clamp(0.5rem, 2.4vw, 0.66rem);
   font-weight: 400;
-  letter-spacing: 0.44em;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
   color: rgba(245, 245, 245, 0.48);
   white-space: nowrap;
@@ -987,6 +987,125 @@ h2 {
   font-size: 0.74rem;
   letter-spacing: 0.08em;
   color: rgba(245, 245, 245, 0.38);
+}
+
+@media (max-width: 720px) {
+  .menu-book-stage {
+    gap: 1.35rem;
+  }
+
+  .menu-flip-frame {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .flip-cover-brand {
+    top: 18%;
+    width: min(88%, 16rem);
+  }
+
+  .flip-cover-logo {
+    width: min(34%, 96px);
+    margin-bottom: 0.35rem;
+  }
+
+  .flip-cover-title {
+    font-size: clamp(2.45rem, 14vw, 3.4rem);
+  }
+
+  .flip-cover-sub {
+    align-self: center;
+    margin: 0.35rem 0 0;
+    padding: 0;
+    letter-spacing: 0.28em;
+    font-size: 0.52rem;
+  }
+
+  .flip-cover-footer {
+    bottom: 1.5rem;
+    gap: 0.4rem;
+    padding: 0 1rem;
+  }
+
+  .flip-cover-rule {
+    width: min(48%, 6.5rem);
+    margin-bottom: 0.35rem;
+  }
+
+  .flip-cover-menu-label {
+    font-size: 0.62rem !important;
+    letter-spacing: 0.32em !important;
+  }
+
+  .flip-cover-footer p {
+    font-size: 0.5rem;
+    letter-spacing: 0.18em;
+  }
+
+  .flip-cover-frame {
+    inset: 0.7rem;
+    outline-offset: 3px;
+  }
+
+  .flip-dish-inner {
+    padding: 1.15rem 1rem 1.2rem;
+  }
+
+  .flip-dish-copy {
+    gap: 0.35rem;
+    padding: 0.4rem 0.35rem 0.3rem;
+  }
+
+  .flip-dish-copy h3 {
+    font-size: clamp(1.25rem, 6.5vw, 1.7rem);
+  }
+
+  .flip-dish-ingredients {
+    max-width: 24ch;
+    font-size: 0.74rem;
+  }
+
+  .flip-logo-mark {
+    width: min(52%, 160px);
+  }
+
+  .menu-side-hit {
+    width: 32%;
+    max-width: none;
+  }
+
+  .menu-book-controls {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "hint hint"
+      "prev next";
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .menu-book-hint {
+    grid-area: hint;
+    font-size: 0.68rem;
+  }
+
+  .menu-book-controls .menu-nav-btn:first-child {
+    grid-area: prev;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .menu-book-controls .menu-nav-btn:last-child {
+    grid-area: next;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .menu-nav-btn {
+    min-height: 2.7rem;
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+    padding: 0 0.75rem;
+  }
 }
 
 @media (max-width: 620px) {

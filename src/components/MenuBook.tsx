@@ -150,12 +150,31 @@ function useBookSize() {
     shellW: 1040,
     coverW: 480,
     coverH: 710,
+    isPortrait: false,
   });
 
   useEffect(() => {
     const update = () => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
+      const isPortrait = vw < 720;
+
+      if (isPortrait) {
+        const pageW = Math.round(
+          Math.min(vw - 28, 360, Math.max(260, (vh * 0.56) / 1.48))
+        );
+        const pageH = Math.round(pageW * 1.48);
+        setSize({
+          pageW,
+          pageH,
+          shellW: pageW,
+          coverW: pageW,
+          coverH: pageH,
+          isPortrait: true,
+        });
+        return;
+      }
+
       const maxByWidth = Math.min(
         560,
         Math.max(168, Math.min(1280, vw - 36) / 2)
@@ -167,7 +186,7 @@ function useBookSize() {
         Math.min(pageW * 1.12, Math.min(580, vw - 48), (vh * 0.8) / 1.48)
       );
       const coverH = Math.round(coverW * 1.48);
-      setSize({ pageW, pageH, shellW: pageW * 2, coverW, coverH });
+      setSize({ pageW, pageH, shellW: pageW * 2, coverW, coverH, isPortrait: false });
     };
     update();
     window.addEventListener("resize", update);
@@ -183,10 +202,11 @@ export function MenuBook() {
   const [ready, setReady] = useState(false);
   const [gate, setGate] = useState<Gate>("closed");
   const [coverMotion, setCoverMotion] = useState<CoverMotion>("idle");
-  const { pageW, pageH, shellW, coverW, coverH } = useBookSize();
+  const { pageW, pageH, shellW, coverW, coverH, isPortrait } = useBookSize();
 
   const innerPageCount = menuDishes.length * 2;
-  const lastSpreadIndex = innerPageCount - 2;
+  const lastContentIndex = isPortrait ? innerPageCount - 1 : innerPageCount - 2;
+  const startCloseIndex = isPortrait ? 0 : 1;
 
   const isBusy = coverMotion !== "idle";
   const isOpening = coverMotion === "opening";
@@ -235,19 +255,19 @@ export function MenuBook() {
   const goToEnd = useCallback(() => {
     if (isBusy) return;
     const api = bookRef.current?.pageFlip();
-    api?.turnToPage(lastSpreadIndex);
-    setPage(lastSpreadIndex);
+    api?.turnToPage(lastContentIndex);
+    setPage(lastContentIndex);
     setCoverMotion("to-end");
-  }, [isBusy, lastSpreadIndex]);
+  }, [isBusy, lastContentIndex]);
 
   const reopenFromEnd = useCallback(() => {
     if (!ready || isBusy) return;
     const api = bookRef.current?.pageFlip();
     if (!api) return;
-    api.turnToPage(lastSpreadIndex);
-    setPage(lastSpreadIndex);
+    api.turnToPage(lastContentIndex);
+    setPage(lastContentIndex);
     setCoverMotion("from-end");
-  }, [ready, isBusy, lastSpreadIndex]);
+  }, [ready, isBusy, lastContentIndex]);
 
   useEffect(() => {
     if (!isBusy) return;
@@ -287,12 +307,12 @@ export function MenuBook() {
     const api = bookRef.current?.pageFlip();
     if (!api) return;
     const current = api.getCurrentPageIndex();
-    if (current >= lastSpreadIndex) {
+    if (current >= lastContentIndex) {
       goToEnd();
       return;
     }
     api.flipNext("top");
-  }, [gate, isBusy, openBook, lastSpreadIndex, goToEnd]);
+  }, [gate, isBusy, openBook, lastContentIndex, goToEnd]);
 
   const flipPrev = useCallback(() => {
     if (gate === "ended") {
@@ -303,14 +323,17 @@ export function MenuBook() {
     const api = bookRef.current?.pageFlip();
     if (!api) return;
     const current = api.getCurrentPageIndex();
-    if (current <= 1) {
+    if (current <= startCloseIndex) {
       closeBook();
       return;
     }
     api.flipPrev("top");
-  }, [gate, isBusy, reopenFromEnd, closeBook]);
+  }, [gate, isBusy, reopenFromEnd, closeBook, startCloseIndex]);
 
-  const bookKey = useMemo(() => `${pageW}x${pageH}`, [pageW, pageH]);
+  const bookKey = useMemo(
+    () => `${pageW}x${pageH}-${isPortrait ? "p" : "l"}`,
+    [pageW, pageH, isPortrait]
+  );
 
   const spreadPages = useMemo(
     () =>
@@ -426,13 +449,13 @@ export function MenuBook() {
                 width={pageW}
                 height={pageH}
                 size="fixed"
-                minWidth={260}
+                minWidth={240}
                 maxWidth={600}
-                minHeight={360}
+                minHeight={340}
                 maxHeight={900}
                 drawShadow
                 flippingTime={900}
-                usePortrait={false}
+                usePortrait={isPortrait}
                 startZIndex={0}
                 autoSize={false}
                 maxShadowOpacity={0.35}
