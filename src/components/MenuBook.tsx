@@ -161,7 +161,7 @@ function useBookSize() {
 
       if (isPortrait) {
         const pageW = Math.round(
-          Math.min(vw - 28, 360, Math.max(260, (vh * 0.56) / 1.48))
+          Math.min(vw - 24, 380, Math.max(280, (vh * 0.6) / 1.48))
         );
         const pageH = Math.round(pageW * 1.48);
         setSize({
@@ -204,7 +204,10 @@ export function MenuBook() {
   const [coverMotion, setCoverMotion] = useState<CoverMotion>("idle");
   const { pageW, pageH, shellW, coverW, coverH, isPortrait } = useBookSize();
 
-  const innerPageCount = menuDishes.length * 2;
+  // Desktop: logo + dish spreads. Mobile: dish pages only (no logo fillers).
+  const innerPageCount = isPortrait
+    ? menuDishes.length
+    : menuDishes.length * 2;
   const lastContentIndex = isPortrait ? innerPageCount - 1 : innerPageCount - 2;
   const startCloseIndex = isPortrait ? 0 : 1;
 
@@ -228,7 +231,9 @@ export function MenuBook() {
   const dishIndex =
     gate !== "open" && !isFromEnd
       ? 0
-      : Math.min(menuDishes.length, Math.floor(page / 2) + 1);
+      : isPortrait
+        ? Math.min(menuDishes.length, page + 1)
+        : Math.min(menuDishes.length, Math.floor(page / 2) + 1);
 
   const finishMotion = useCallback((nextGate: Gate) => {
     setGate(nextGate);
@@ -337,11 +342,15 @@ export function MenuBook() {
 
   const spreadPages = useMemo(
     () =>
-      menuDishes.flatMap((dish) => [
-        <LogoPage key={`logo-${dish.name}`} />,
-        <DishPage key={`dish-${dish.name}`} {...dish} />,
-      ]),
-    []
+      isPortrait
+        ? menuDishes.map((dish) => (
+            <DishPage key={`dish-m-${dish.name}`} {...dish} />
+          ))
+        : menuDishes.flatMap((dish) => [
+            <LogoPage key={`logo-${dish.name}`} />,
+            <DishPage key={`dish-${dish.name}`} {...dish} />,
+          ]),
+    [isPortrait]
   );
 
   const frontCoverClass = [
