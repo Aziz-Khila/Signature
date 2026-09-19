@@ -135,8 +135,20 @@ type FlipApi = {
     flipPrev: (corner?: "top" | "bottom") => void;
     flip: (page: number, corner?: "top" | "bottom") => void;
     turnToPage: (page: number) => void;
+    turnToNextPage: () => void;
+    turnToPrevPage: () => void;
     getCurrentPageIndex: () => number;
     getPageCount: () => number;
+    getBoundsRect: () => {
+      left: number;
+      top: number;
+      width: number;
+      height: number;
+      pageWidth: number;
+    };
+    getFlipController: () => {
+      flip: (pos: { x: number; y: number }) => void;
+    };
   };
 };
 
@@ -293,34 +305,14 @@ export function MenuBook() {
     }
   }, []);
 
-  const getCurrentIndex = useCallback(() => {
+  const syncPageFromApi = useCallback(() => {
     const api = getFlipApi();
-    const fromApi = api?.getCurrentPageIndex?.();
-    if (typeof fromApi === "number" && Number.isFinite(fromApi)) {
-      return fromApi;
+    if (!api) return;
+    const idx = api.getCurrentPageIndex?.();
+    if (typeof idx === "number" && Number.isFinite(idx)) {
+      setPage(idx);
     }
-    return page;
-  }, [getFlipApi, page]);
-
-  const goToPage = useCallback(
-    (target: number, animate = true) => {
-      const api = getFlipApi();
-      if (!api) return;
-      const safe = Math.max(0, Math.min(target, innerPageCount - 1));
-      try {
-        if (animate) {
-          api.flip(safe, "top");
-        } else {
-          api.turnToPage(safe);
-        }
-      } catch {
-        api.turnToPage(safe);
-      }
-      setPage(safe);
-      setGate("open");
-    },
-    [getFlipApi, innerPageCount]
-  );
+  }, [getFlipApi]);
 
   const onFlip = useCallback(
     (e: { data: number }) => {
@@ -338,7 +330,10 @@ export function MenuBook() {
     }
     if (gate === "ended" || isBusy) return;
 
-    const current = getCurrentIndex();
+    const api = getFlipApi();
+    if (!api) return;
+
+    const current = api.getCurrentPageIndex?.() ?? page;
     const spread = isPortrait ? current : Math.floor(current / 2);
     const lastSpread = isPortrait
       ? innerPageCount - 1
@@ -349,18 +344,23 @@ export function MenuBook() {
       return;
     }
 
-    const target = isPortrait ? current + 1 : (spread + 1) * 2;
-    goToPage(target, true);
+    try {
+      api.flipNext("top");
+    } catch {
+      api.turnToNextPage();
+      syncPageFromApi();
+    }
   }, [
     gate,
     isBusy,
     openBook,
-    getCurrentIndex,
+    getFlipApi,
+    page,
     isPortrait,
     innerPageCount,
     lastContentIndex,
     goToEnd,
-    goToPage,
+    syncPageFromApi,
   ]);
 
   const flipPrev = useCallback(() => {
@@ -370,7 +370,14 @@ export function MenuBook() {
     }
     if (gate === "closed" || isBusy) return;
 
-    const current = getCurrentIndex();
+    const api = getFlipApi();
+    if (!api) return;
+
+    const apiIndex = api.getCurrentPageIndex?.();
+    const current =
+      typeof apiIndex === "number" && Number.isFinite(apiIndex)
+        ? apiIndex
+        : page;
     const spread = isPortrait ? current : Math.floor(current / 2);
 
     if (spread <= 0) {
@@ -378,22 +385,30 @@ export function MenuBook() {
       return;
     }
 
-    const target = isPortrait ? current - 1 : (spread - 1) * 2;
-    goToPage(target, true);
-  }, [
-    gate,
-    isBusy,
-    reopenFromEnd,
-    getCurrentIndex,
-    isPortrait,
-    closeBook,
-    goToPage,
-  ]);
+    // StPageFlip.flipPrev() hardcodes x:10 (window), which fails when the book is centered.
+    // Drive the same animation from the book's actual left edge.
+    try {
+      const rect = api.getBoundsRect();
+      api.getFlipController().flip({
+        x: rect.left + 12,
+        y: rect.top + 8,
+      });
+    } catch {
+      const target = isPortrait ? current - 1 : (spread - 1) * 2;
+      api.turnToPage(target);
+      setPage(target);
+    }
+  }, [gate, isBusy, reopenFromEnd, getFlipApi, page, isPortrait, closeBook]);
 
   const bookKey = useMemo(
     () => `${pageW}x${pageH}-${isPortrait ? "p" : "l"}`,
     [pageW, pageH, isPortrait]
   );
+
+  useEffect(() => {
+    setReady(false);
+    setPage(0);
+  }, [bookKey]);
 
   const spreadPages = useMemo(
     () =>
