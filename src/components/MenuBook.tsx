@@ -209,7 +209,6 @@ export function MenuBook() {
     ? menuDishes.length
     : menuDishes.length * 2;
   const lastContentIndex = isPortrait ? innerPageCount - 1 : innerPageCount - 2;
-  const startCloseIndex = isPortrait ? 0 : 1;
 
   const isBusy = coverMotion !== "idle";
   const isOpening = coverMotion === "opening";
@@ -286,18 +285,47 @@ export function MenuBook() {
     return () => window.clearTimeout(timer);
   }, [isBusy, coverMotion, finishMotion]);
 
+  const getFlipApi = useCallback(() => {
+    try {
+      return bookRef.current?.pageFlip() ?? null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const getCurrentIndex = useCallback(() => {
+    const api = getFlipApi();
+    const fromApi = api?.getCurrentPageIndex?.();
+    if (typeof fromApi === "number" && Number.isFinite(fromApi)) {
+      return fromApi;
+    }
+    return page;
+  }, [getFlipApi, page]);
+
+  const goToPage = useCallback(
+    (target: number, animate = true) => {
+      const api = getFlipApi();
+      if (!api) return;
+      const safe = Math.max(0, Math.min(target, innerPageCount - 1));
+      try {
+        if (animate) {
+          api.flip(safe, "top");
+        } else {
+          api.turnToPage(safe);
+        }
+      } catch {
+        api.turnToPage(safe);
+      }
+      setPage(safe);
+      setGate("open");
+    },
+    [getFlipApi, innerPageCount]
+  );
+
   const onFlip = useCallback(
     (e: { data: number }) => {
-      const next = e.data;
-      if (next <= 0) {
-        setPage(0);
-        return;
-      }
-      if (next >= innerPageCount - 1) {
-        setPage(innerPageCount - 1);
-        return;
-      }
-      setPage(next);
+      const next = typeof e?.data === "number" ? e.data : 0;
+      setPage(Math.max(0, Math.min(next, innerPageCount - 1)));
       setGate("open");
     },
     [innerPageCount]
@@ -309,15 +337,31 @@ export function MenuBook() {
       return;
     }
     if (gate === "ended" || isBusy) return;
-    const api = bookRef.current?.pageFlip();
-    if (!api) return;
-    const current = api.getCurrentPageIndex();
-    if (current >= lastContentIndex) {
+
+    const current = getCurrentIndex();
+    const spread = isPortrait ? current : Math.floor(current / 2);
+    const lastSpread = isPortrait
+      ? innerPageCount - 1
+      : Math.floor(lastContentIndex / 2);
+
+    if (spread >= lastSpread) {
       goToEnd();
       return;
     }
-    api.flipNext("top");
-  }, [gate, isBusy, openBook, lastContentIndex, goToEnd]);
+
+    const target = isPortrait ? current + 1 : (spread + 1) * 2;
+    goToPage(target, true);
+  }, [
+    gate,
+    isBusy,
+    openBook,
+    getCurrentIndex,
+    isPortrait,
+    innerPageCount,
+    lastContentIndex,
+    goToEnd,
+    goToPage,
+  ]);
 
   const flipPrev = useCallback(() => {
     if (gate === "ended") {
@@ -325,15 +369,26 @@ export function MenuBook() {
       return;
     }
     if (gate === "closed" || isBusy) return;
-    const api = bookRef.current?.pageFlip();
-    if (!api) return;
-    const current = api.getCurrentPageIndex();
-    if (current <= startCloseIndex) {
+
+    const current = getCurrentIndex();
+    const spread = isPortrait ? current : Math.floor(current / 2);
+
+    if (spread <= 0) {
       closeBook();
       return;
     }
-    api.flipPrev("top");
-  }, [gate, isBusy, reopenFromEnd, closeBook, startCloseIndex]);
+
+    const target = isPortrait ? current - 1 : (spread - 1) * 2;
+    goToPage(target, true);
+  }, [
+    gate,
+    isBusy,
+    reopenFromEnd,
+    getCurrentIndex,
+    isPortrait,
+    closeBook,
+    goToPage,
+  ]);
 
   const bookKey = useMemo(
     () => `${pageW}x${pageH}-${isPortrait ? "p" : "l"}`,
