@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Instrument_Serif, Outfit } from "next/font/google";
+import { Great_Vibes, Instrument_Serif, Outfit } from "next/font/google";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import "./globals.css";
 import "lenis/dist/lenis.css";
@@ -15,6 +15,13 @@ const instrumentSerif = Instrument_Serif({
 const outfit = Outfit({
   subsets: ["latin"],
   variable: "--font-outfit",
+  display: "swap",
+});
+
+const greatVibes = Great_Vibes({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-script",
   display: "swap",
 });
 
@@ -36,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body
-        className={`${instrumentSerif.variable} ${outfit.variable}`}
+        className={`${instrumentSerif.variable} ${outfit.variable} ${greatVibes.variable}`}
         suppressHydrationWarning
       >
         <div className="noise" aria-hidden="true" />
