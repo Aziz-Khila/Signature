@@ -14,8 +14,8 @@ export default function HomePage() {
       <main id="top">
         <Hero />
         <Experience />
-        <MenuBook />
         <Dishes />
+        <MenuBook />
         <Atmosphere />
         <Visit />
       </main>

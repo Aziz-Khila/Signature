@@ -32,8 +32,8 @@ export function Header() {
       </a>
       <nav className="nav" aria-label="Navigation principale">
         <a href="#experience">L’expérience</a>
-        <a href="#menu">Menu</a>
         <a href="#plats">Plats</a>
+        <a href="#menu">Menu</a>
         <a href="#visite">Visite</a>
       </nav>
       <span className="header-spacer" aria-hidden="true" />
